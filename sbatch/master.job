@@ -76,7 +76,7 @@ samtools sort -o ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam ./tempfile
 
 samtools index ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam
 
-mdkir ./tempfiles/bamcoverage
+mkdir ./tempfiles/bamcoverage
 
 conda activate eclip
 bamCoverage -p 64 -b ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam -o ./tempfiles/bamcoverage/r1.coverage.bw
@@ -86,11 +86,17 @@ mkdir ./tempfiles/peak_calling
 pureclip -nt 64 \
 -i ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam \
 -bai ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam.bai \
--iv 'chr1;chr2;chr3' \
 -g ./STAR/hg38/hg38.fa \
--o ./tempfiles/peak_calling/peaks.bed
+-o ./tempfiles/peak_calling/crosslinks.bed \
+-or ./tempfiles/peak_calling/regions.bed
+
+samtools faidx ./STAR/hg38/hg38.fa -o ./STAR//hg38/hg38.fa.fai
 
 bedtools getfasta \
 -fi ./STAR/hg38/hg38.fa \
--bed ./tempfiles/peak_calling/peaks.bed > ./output/peaks.fasta
+-bed ./tempfiles/peak_calling/crosslinks.bed > ./output/crosslinks.fasta
+
+bedtools getfasta \
+-fi ./STAR/hg38/hg38.fa \
+-bed ./tempfiles/peak_calling/regions.bed > ./output/regions.fasta
 conda deactivate
