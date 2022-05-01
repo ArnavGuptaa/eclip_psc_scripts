@@ -1,0 +1,99 @@
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH -p RM-shared
+#SBATCH -t 03:00:00
+#SBATCH --ntasks-per-node=64
+#SBATCH --no-requeue
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=kghatole@andrew.cmu.edu
+#SBATCH -A mcb180074p
+
+# type 'man sbatch' for more information and options
+# this job will ask for 1 full RM node (128 cores) for 5 hours
+# this job would potentially charge 640 RM SUs
+
+#echo commands to stdout
+set -x
+
+# move to working directory
+# this job assumes:
+# - all input data is stored in this directory
+# - all output should be stored in this directory
+# - please note that groupname should be replaced by your groupname
+# - username should be replaced by your username
+# - path-to-directory should be replaced by the path to your directory where the executable is
+
+
+module load anaconda3
+conda deactivate
+module load anaconda3
+module load cutadapt
+module load fastq-tools
+module load STAR
+module load samtools
+
+
+cd /ocean/projects/mcb180074p/kghatole/eclip
+
+mkdir tempfiles
+mkdir output
+
+conda activate eclip
+
+umi_tools extract \
+--extract-method=string \
+--bc-pattern=NNNNNNNNNN \
+--bc-pattern2=NNNNNNNNNN \
+--log ./tempfiles/EXAMPLE_SE.rep1_clip.metrics \
+--read2-in ./DataSet/RBFOX2.r2.fastq.gz \
+--read2-out ./tempfiles/EXAMPLE_SE.rep1.umi.r2.fq \
+--stdin ./DataSet/RBFOX2.r1.fastq.gz \
+--stdout ./tempfiles/EXAMPLE_SE.rep1.umi.r1.fq
+conda deactivate
+
+# run a pre-compiled program which is already in your project space
+chmod +x ./scripts/umi_cutadapt.sh
+
+./scripts/umi_cutadapt.sh
+
+chmod +x ./scripts/STAR_alignment.sh
+
+./scripts/STAR_alignment.sh
+
+mkdir ./tempfiles/samtools
+samtools sort -n -o ./tempfiles/samtools/r1.fq.genome-mappedSo.bam ./tempfiles/STAR/r1.genome-mapped.bam
+
+
+
+mkdir ./tempfiles/bcollapse
+
+conda activate bc
+python ./scripts/barcodecollapse.py \
+-o ./tempfiles/bcollapse/r1.fq.genome-mappedSo.rmDup.bam \
+-m ./tempfiles/bcollapse/r1.fq.genome-mappedSo.rmDup.metrics \
+-b ./tempfiles/samtools/r1.fq.genome-mappedSo.bam
+conda deactivate
+
+samtools sort -o ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam ./tempfiles/bcollapse/r1.fq.genome-mappedSo.rmDup.bam
+
+samtools index ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam
+
+mdkir ./tempfiles/bamcoverage
+
+conda activate eclip
+bamCoverage -p 64 -b ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam -o ./tempfiles/bamcoverage/r1.coverage.bw
+
+mkdir ./tempfiles/peak_calling
+
+pureclip -nt 64 \
+-i ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam \
+-bai ./tempfiles/samtools/r1.fq.genome-mappedSo.rmDup.bam.bai \
+-iv 'chr1;chr2;chr3' \
+-g ./STAR/hg38/hg38.fa \
+-o ./tempfiles/peak_calling/peaks.bed
+
+bedtools getfasta \
+-fi ./STAR/hg38/hg38.fa \
+-bed ./tempfiles/peak_calling/peaks.bed > ./output/peaks.fasta
+conda deactivate
