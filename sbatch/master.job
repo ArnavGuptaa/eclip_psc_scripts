@@ -5,9 +5,6 @@
 #SBATCH -t 03:00:00
 #SBATCH --ntasks-per-node=64
 #SBATCH --no-requeue
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=kghatole@andrew.cmu.edu
-#SBATCH -A mcb180074p
 
 # type 'man sbatch' for more information and options
 # this job will ask for 1 full RM node (128 cores) for 5 hours
@@ -34,7 +31,7 @@ module load STAR
 module load samtools
 
 
-cd /ocean/projects/mcb180074p/kghatole/eclip
+cd $PROJECT/eclip
 
 mkdir tempfiles
 mkdir output
