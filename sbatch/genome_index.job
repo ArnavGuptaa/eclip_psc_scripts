@@ -21,7 +21,7 @@ set -x
 # - username should be replaced by your username
 # - path-to-directory should be replaced by the path to your directory where the executable is
 
-module STAR
+module load STAR
 
 cd $PROJECT/eclip
 
