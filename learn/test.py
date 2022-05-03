@@ -4,13 +4,12 @@ Description:
 Author: Tianyi Fei
 Date: 1969-12-31 19:00:00
 LastEditors: Tianyi Fei
-LastEditTime: 2022-05-02 10:39:19
+LastEditTime: 2022-05-02 20:49:37
 '''
 import torch
 import pandas as pd
 import pickle
 import argparse
-from sklearn.preprocessing import LabelEncoder
 import matplotlib.pyplot as plt
 import models
 import numpy as np
@@ -33,7 +32,7 @@ def test(model, dataset):
             pre_pos, _ = model(pos)
             _, pre_neg = model(neg)
             #print(pre_pos)
-            pre_pos = pre_pos.squeeze().cpu().numpy()
+            pre_pos = pre_pos.squeeze(1).cpu().numpy()
             #print(pre_pos.shape)
 
             pre_pos_binary = (pre_pos > 0.5).astype(int)
@@ -56,6 +55,7 @@ def test(model, dataset):
 
     predict = np.concatenate(predict)
     truth = np.concatenate(truth)
+    # acc = np.sum()
     res = accuracy_score(predict, truth)
     return res, sums / len(dataset)
 
@@ -143,9 +143,9 @@ with torch.no_grad():
         res = res / comp
         res[res < 0] = 0
         # print(np.mean(res))
-        res = res * (0.5 / np.mean(res))
-        res[res > 1] = 1
-        res = np.exp(res) - 1
+        # res = res * (0.5 / np.mean(res))
+        # res[res > 1] = 1
+        # res = np.exp(res) - 1
 # print(np.min(res), np.max(res), ran)
 plt.plot(res)
 plt.title(name)

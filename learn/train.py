@@ -4,7 +4,7 @@ Description:
 Author: Tianyi Fei
 Date: 2022-04-14 18:00:30
 LastEditors: Tianyi Fei
-LastEditTime: 2022-05-02 11:18:48
+LastEditTime: 2022-05-02 20:48:55
 '''
 '''
 Description: 
@@ -18,14 +18,14 @@ import torch.nn as nn
 import torch.optim as optim
 # from timeit import default_timer as timer
 import numpy as np
-# from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score
 import data
 import models
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 import argparse
 import os
-# from tqdm import tqdm
+from tqdm import tqdm
 import copy
 
 
@@ -42,10 +42,10 @@ def test(model, dataset):
             _, pre_pos = model(pos)
             _, pre_neg = model(neg)
 
-            pre_pos = pre_pos.squeeze().cpu().numpy()
+            pre_pos = pre_pos.squeeze(1).cpu().numpy()
             pre_pos_binary = (pre_pos > 0.5).astype(int)
 
-            pre_neg = pre_neg.squeeze().cpu().numpy()
+            pre_neg = pre_neg.squeeze(1).cpu().numpy()
             pre_neg_binary = (pre_neg > 0.5).astype(int)
             # print(pre_neg_binary)
             # print(pre_pos_binary)
@@ -67,8 +67,9 @@ def test(model, dataset):
     # print(pre_pos)
     # print(predict)
     # print(truth)
-    acc = np.sum(predict == truth)
-    res = acc / len(predict)
+    # acc = np.sum(predict == truth)
+    # res = acc / len(predict)
+    res = accuracy_score(truth, predict)
     return res
 
 
@@ -79,7 +80,7 @@ def train(model, epoch, trainset, testset):
     acc_test = []
     bestmodel = None
     best = -1
-    for i in range(epoch):
+    for i in tqdm(range(epoch)):
         # print("Epoch ", i)
         total_loss = 0
         # start = timer()
@@ -94,10 +95,8 @@ def train(model, epoch, trainset, testset):
             # exit()
             _, pre_pos = model(pos)
             _, pre_neg = model(neg)
-
-            pre_pos = pre_pos.squeeze()
-            pre_neg = pre_neg.squeeze()
-
+            pre_pos = pre_pos.squeeze(1)
+            pre_neg = pre_neg.squeeze(1)
             loss = criterion(pre_pos, torch.ones_like(pre_pos)) + \
             criterion(pre_neg, torch.zeros_like(pre_neg))
             # loss = criterion(corr, pre_corr)
@@ -127,6 +126,7 @@ def Args():
                         type=str,
                         default="./models/",
                         help="the path to the folder for saving models")
+    parser.add_argument("-c", action="store_true", help="save a copy")
     parser.add_argument("-ds",
                         required=True,
                         type=str,
@@ -180,3 +180,8 @@ if __name__ == "__main__":
     # print(res, os.path.join(args.checkpoints, name + ".pth"))
     print("finish")
     torch.save(cnn, os.path.join(args.save, name + args.model + ".pth"))
+    if args.c:
+        if args.model == "motif":
+            torch.save(cnn, "./motif.pth")
+        else:
+            torch.save(cnn, "./full.pth")

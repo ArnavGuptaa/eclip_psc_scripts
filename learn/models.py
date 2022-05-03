@@ -4,7 +4,7 @@ Description:
 Author: Tianyi Fei
 Date: 1969-12-31 19:00:00
 LastEditors: Tianyi Fei
-LastEditTime: 2022-05-01 23:44:02
+LastEditTime: 2022-05-02 21:23:18
 '''
 import torch
 import torch.nn as nn
@@ -96,7 +96,7 @@ class Motif(nn.Module):
         #x = torch.relu(self.conv3(x))
         # x = x.view(x.shape[0], -1)
         # print(x.shape)
-        x = self.mp(x).squeeze()
+        x = self.mp(x).squeeze(2)
         # print(x.shape)
 
         # print(x.shape)
